@@ -7,6 +7,7 @@ import StringIO
 from UserDict import UserDict
 import simplejson as json
 from Gps.Antares.convert import latWgs84ToDecimal, lngWgs84ToDecimal
+from Gps.SkyPatrol.convert import degTodms
 from Gps.common import MphToKph
 import Location.geomapgoogle
 
@@ -89,12 +90,82 @@ class ANTDevice(Device):
         Device.__setitem__(self, key, item) 
 
         
+def tagDataskp(dList, start, end):
+    """
+        Toma una posición para obtener de la lista dList.
+    """
+    try:
+        #if end is not None: 
+        if end: 
+            #tagdata = ",".join(dList[start:end + 1])
+            tagdata = dList[start:end + 1]
+        else:
+            tagdata = dList[start]
+    except: sys.stderr.write("Error al obtener el Tag Data")
+            
+    return tagdata or None
     
+
 class SKPDevice(Device):
     """
         Dispositivo Skypatrol
     """
-    pass
+    # ['', '5', 'SKP87', '$GPRMC', '122408.00', 'A', '0441.935953', 'N', '07404.450302', 'W', '0.0', '0.0', '180912', '5.5', 'E', 'A*2F']
+    tagDataSKP = {  # (position_start, position_end, function_tagData, function_convert )
+                    "id"        : (2, None, tagDataskp, None), # ID de la unidad
+                    "type"      : (0, None, tagDataskp, None),
+                    "typeEvent" : (3, None, tagDataskp, None), # 
+                    "codEvent"  : (1, None, tagDataskp, None), # Codigo de evento activado (en Antares de 00 a 49, en e.Track de 00 a 99)
+                    "weeks"     : (0, None, tagDataskp, None), # Es el numero de semanas desde 00:00AM del 6 de enero de 1980.
+                    "dayWeek"   : (0, None, tagDataskp, None), # 0=Domingo, 1=Lunes, etc hasta 6=sabado.
+                    "time"      : (4, None, tagDataskp, None), # Hora expresada en segundos desde 00:00:00AM
+                    "lat"       : (6, 7, tagDataskp, degTodms), # Latitud
+                    #"lat"       : (6, tagDataskp, latWgs84ToDecimal),    # Latitud
+                    "lng"       : (8, 9, tagDataskp, degTodms), # Longitud
+                    #"lng"       : (23, 9, 0, tagDataskp, lngWgs84ToDecimal),    # Longitud
+                    "speed"     : (10, None, tagDataskp, MphToKph),   # Velocidad en MPH
+                    "course"    : (11, None, tagDataskp, None), # Curso en grados
+                    "gpsSource" : (0, None, tagDataskp, None), # Fuente GPS. Puede ser 0=2D GPS, 1=3D GPS, 2=2D DGPS, 3=3D DGPS, 6=DR, 8=Degraded DR. # Problema DB si no son enteros    
+                    "ageData"   : (0, None, tagDataskp, None), # Edad del dato. Puede ser 0=No disponible, 1=viejo (10 segundos) ó 2=Fresco (menor a 10 segundos) # Problema DB si no son enteros
+                    "odometro"  : (15, None, tagDataskp, None) # Odómetro
+                 }
+
+
+    def __parse(self, data):
+        self.clear()
+        try:
+            import re
+            ####
+            # data = '     5                 SKP87 $GPRMC,122408.00,A,0441.935953,N,07404.450302,W,0.0,0.0,180912,5.5,E,A*2F'
+            data = data.replace(' ', ',')
+            # ',,,,,5,,,,,,,,,,,,,,,,,SKP87,$GPRMC,122408.00,A,0441.935953,N,07404.450302,W,0.0,0.0,180912,5.5,E,A*2F'
+            data = re.sub(r",,", "", data)
+            # ',5,SKP87,$GPRMC,122408.00,A,0441.935953,N,07404.450302,W,0.0,0.0,180912,5.5,E,A*2F'
+            dataList = data.split(',')
+            # ['', '5', 'SKP87', '$GPRMC', '122408.00', 'A', '0441.935953', 'N', '07404.450302', 'W', '0.0', '0.0', '180912', '5.5', 'E', 'A*2F']
+            #
+            for tag, (position_start, position_end, parseFunc, convertFunc) in self.tagDataSKP.items():
+                self[tag] = convertFunc and convertFunc(parseFunc(dataList, position_start, position_end)) or parseFunc(dataList, position_start, position_end)
+
+            # Creamos una key para la altura (estandar), ya que las tramas actuales no la incluyen:
+            self['altura'] = None
+            # Creamos una key para el dato position:
+            self['position'] = "(%(lat)s,%(lng)s)" % self
+
+            # Realizamos la Geocodificación. Tratar de no hacer esto
+            # es mejor que se realize por cada cliente con la API de GoogleMap
+            self["geocoding"] = None 
+            self["geocoding"] = json.loads(Location.geomapgoogle.regeocode('%s,%s' % (self["lat"], self["lng"])))[0]
+
+        except: print(sys.exc_info()) #sys.stderr.write('Error Inesperado:', sys.exc_info())
+        #finally: dataFile.close()
+
+
+    def __setitem__(self, key, item):
+        if key == "data" and item:
+            self.__parse(item)
+        # Llamamos a __setitem__ de nuestro ancestro
+        Device.__setitem__(self, key, item) 
 
 
 class HUNTDevice(Device):
