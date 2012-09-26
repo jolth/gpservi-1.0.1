@@ -93,12 +93,13 @@ class DaemonUDP:
         
         # Parse Devices
         rawData = Devices.devices.getTypeClass(data, address) # retorna la data analizada en un diccionario
+        print "rawData1:", rawData 
         
         if not rawData.has_key('id'): # Si la trama no tiene ID 
             print >> sys.stdout, rawData#, '\n'
             return # Termina de ejecutar el hilo
 
-        print rawData # Imprime la data procesada (Print de Prueba)
+        print "rawData2:", rawData # Imprime la data procesada (Print de Prueba) 
 
         ### Eventos
         import Event.captureEvent
@@ -107,10 +108,12 @@ class DaemonUDP:
         print "Evento Gestionado:", event
         # End Event
 
-        ### Escribe el la Tabla de Log
+        ### Escribe en la Tabla de Log
         import Log.logDB as LogDB
         LogDB.insertLog(rawData)
         # End Tabla de Log
+
+        print "Sale tabla Log" # Print de prueba
 
         #### Escribe en el Fichero de Log
         lock.acquire(True)
