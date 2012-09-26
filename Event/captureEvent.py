@@ -104,61 +104,9 @@ def event2(data=None): return "Speeding"
 @insertEvent
 def event5(data=None): return "Report" 
 @insertEvent
-def event6(data=None): 
-    # Insert vehicle_state:
-    queryVehiState = """SELECT fn_ingresar_vehicle_state(%(gps_id)s,  't', NULL, NULL, NULL);"""
-
-    try:
-        from DB.pgSQL import PgSQL
-        db = PgSQL()
-        db.cur.execute(queryVehiState, data)
-        print "Se guardan los stados del vehiculo" # Print de prueba
-    except:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        print >> sys.stderr, '-'*60
-        print >> sys.stderr, "*** print exception <<insertEventStart>>:"
-        traceback.print_exception(exc_type, exc_value, exc_traceback,
-                                           limit=2, file=sys.stderr)
-        print >> sys.stderr, '-'*60
-        return "No se guarda el Start"
-    finally:
-        print >> sys.stdout, "Actualizando y Cerranda la conexión"
-        # Realizamos los cambios en la DB
-        db.conn.commit()
-        # Cerramos la comunicación
-        db.cur.close()
-        db.conn.close()
-        
-    return "Start"
-
+def event6(data=None): return "Start"
 @insertEvent
-def event7(data=None): 
-    # Insert vehicle_state:
-    queryVehiState = """SELECT fn_ingresar_vehicle_state(%(gps_id)s,  'f', NULL, NULL, NULL);"""
-
-    try:
-        from DB.pgSQL import PgSQL
-        db = PgSQL()
-        db.cur.execute(queryVehiState, data)
-        print "Se guardan los stados del vehiculo" # Print de prueba
-    except:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        print >> sys.stderr, '-'*60
-        print >> sys.stderr, "*** print exception <<insertEventStart>>:"
-        traceback.print_exception(exc_type, exc_value, exc_traceback,
-                                           limit=2, file=sys.stderr)
-        print >> sys.stderr, '-'*60
-        return "No se guarda el Start"
-    finally:
-        print >> sys.stdout, "Actualizando y Cerranda la conexión"
-        # Realizamos los cambios en la DB
-        db.conn.commit()
-        # Cerramos la comunicación
-        db.cur.close()
-        db.conn.close()
-
-    return "Shutdow"
-
+def event7(data=None): return "Shutdow"
 @insertEvent
 def event8(data=None): return "Bateri on"
 @insertEvent
