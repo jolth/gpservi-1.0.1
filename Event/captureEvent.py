@@ -106,7 +106,8 @@ def event5(data=None): return "Report"
 @insertEvent
 def event6(data=None): 
     # Insert vehicle_state:
-    queryVehiState = """SELECT fn_ingresar_vehicle_state(%(gps_id)s,  't', NULL, NULL, NULL);"""
+    #queryVehiState = """SELECT fn_ingresar_vehicle_state(%(gps_id)s,  't', NULL, NULL, NULL);"""
+    queryVehiState = """SELECT fn_ingresar_vehicle_state(%(gps_id)s,  't', NULL, NULL, NULL, %(datetime)s);"""
 
     try:
         from DB.pgSQL import PgSQL
@@ -134,7 +135,8 @@ def event6(data=None):
 @insertEvent
 def event7(data=None): 
     # Insert vehicle_state:
-    queryVehiState = """SELECT fn_ingresar_vehicle_state(%(gps_id)s,  'f', NULL, NULL, NULL);"""
+    #queryVehiState = """SELECT fn_ingresar_vehicle_state(%(gps_id)s,  'f', NULL, NULL, NULL);"""
+    queryVehiState = """SELECT fn_ingresar_vehicle_state(%(gps_id)s,  'f', NULL, NULL, NULL, %(datetime)s);"""
 
     try:
         from DB.pgSQL import PgSQL
@@ -144,7 +146,7 @@ def event7(data=None):
     except:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print >> sys.stderr, '-'*60
-        print >> sys.stderr, "*** print exception <<insertEventStart>>:"
+        print >> sys.stderr, "*** print exception <<insertEventShutdown>>:"
         traceback.print_exception(exc_type, exc_value, exc_traceback,
                                            limit=2, file=sys.stderr)
         print >> sys.stderr, '-'*60
@@ -157,7 +159,7 @@ def event7(data=None):
         db.cur.close()
         db.conn.close()
 
-    return "Shutdow"
+    return "Shutdown"
 
 @insertEvent
 def event8(data=None): return "Bateri on"
